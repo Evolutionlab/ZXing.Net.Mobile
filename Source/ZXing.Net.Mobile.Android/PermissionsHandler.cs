@@ -125,17 +125,17 @@ namespace ZXing.Net.Mobile.Android
             return false;
         }
 
-        internal static bool CheckCameraPermissions(Context context, bool throwOnError = true)
+        internal static bool CheckCameraPermissions(Context context, bool throwOnError = false)
         {
             return CheckPermissions(context, global::Android.Manifest.Permission.Camera, throwOnError);
         }
 
-        internal static bool CheckTorchPermissions(Context context, bool throwOnError = true)
+        internal static bool CheckTorchPermissions(Context context, bool throwOnError = false)
         {
             return CheckPermissions(context, global::Android.Manifest.Permission.Flashlight, throwOnError);
         }
 
-        internal static bool CheckPermissions(Context context, string permission, bool throwOnError = true)
+        internal static bool CheckPermissions(Context context, string permission, bool throwOnError = false)
         {
             var result = true;
             var perf = PerformanceCounter.Start();
