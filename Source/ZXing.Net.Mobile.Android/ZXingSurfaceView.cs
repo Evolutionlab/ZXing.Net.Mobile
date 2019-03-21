@@ -9,7 +9,9 @@ namespace ZXing.Mobile
 {
     public class ZXingSurfaceView : SurfaceView, ISurfaceHolderCallback, IScannerView, IScannerSessionHost
     {
-        public ZXingSurfaceView(Context context, MobileBarcodeScanningOptions options)
+        private CameraAnalyzer _cameraAnalyzer;
+
+        public ZXingSurfaceView(Context context)
             : base(context)
         {
             ScanningOptions = options ?? new MobileBarcodeScanningOptions();
@@ -107,6 +109,7 @@ namespace ZXing.Mobile
             _cameraAnalyzer.SetupCamera();
 
             ScanningOptions = options ?? MobileBarcodeScanningOptions.Default;
+            _cameraAnalyzer = new CameraAnalyzer(this, ScanningOptions);
 
             _cameraAnalyzer.BarcodeFound += (sender, result) =>
             {
@@ -150,9 +153,6 @@ namespace ZXing.Mobile
         public bool IsTorchOn => _cameraAnalyzer.Torch.IsEnabled;
 
         public bool IsAnalyzing => _cameraAnalyzer.IsAnalyzing;
-
-        private CameraAnalyzer _cameraAnalyzer;
-        private bool _surfaceCreated;
 
         public bool HasTorch => _cameraAnalyzer.Torch.IsSupported;
 

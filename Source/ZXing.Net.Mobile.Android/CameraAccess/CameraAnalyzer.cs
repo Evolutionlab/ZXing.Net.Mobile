@@ -19,13 +19,15 @@
 */
 
 using System;
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Android.Content;
 using Android.Views;
 using ApxLabs.FastAndroidCamera;
 using Android.Graphics;
 using Android.Content;
 using Android.Util;
+using ZXing.Mobile.Detectors;
 
 namespace ZXing.Mobile.CameraAccess
 {
@@ -44,10 +46,12 @@ namespace ZXing.Mobile.CameraAccess
         /// 
 
         private readonly CameraController _cameraController;
+        private readonly MobileBarcodeScanningOptions _scanningOptions;
         private readonly CameraEventsListener _cameraEventListener;
         private int _screenHeight = -1;
         private int _screenWidth = -1;
         private Task _processingTask;
+        private IDetector _barcodeDetector;
         private DateTime _lastPreviewAnalysis = DateTime.UtcNow;
         private bool _wasScanned;
         IScannerSessionHost _scannerHost;
@@ -202,6 +206,8 @@ namespace ZXing.Mobile.CameraAccess
 
             var barcodeReader = _scannerHost.ScanningOptions.BuildBarcodeReader();
 
+            //InitBarcodeReaderIfNeeded();
+
             var rotate = false;
             var newWidth = width;
             var newHeight = height;
@@ -334,7 +340,6 @@ namespace ZXing.Mobile.CameraAccess
 
             return framingRect;
         }
-
         /// <summary>
         ///Scanning Improvement, VK 10/2018
         /// </summary>
@@ -383,6 +388,56 @@ namespace ZXing.Mobile.CameraAccess
                 return hardMax;
             }
             return dim;
+        }
+
+        private void InitBarcodeReaderIfNeeded()
+        {
+            if (_barcodeDetector != null)
+                return;
+
+            var isNativeUsed = false;
+            if (_scanningOptions.UseNativeScanning)
+            {
+                _barcodeDetector = CreateGoogleVisionDetector();
+                isNativeUsed = true;
+            }
+
+            if (_barcodeDetector == null)
+            {
+                _barcodeDetector = new ZXingDetector();
+                isNativeUsed = false;
+            }
+
+            var isDetectorAvailable = _barcodeDetector.Init(_scanningOptions);
+            if (!isDetectorAvailable && isNativeUsed)
+            {
+                _barcodeDetector = new ZXingDetector();
+                _barcodeDetector.Init(_scanningOptions);
+            }
+        }
+
+        private IDetector CreateGoogleVisionDetector()
+        {
+            try
+            {
+                var targetAsm =
+                    AppDomain.CurrentDomain.GetAssemblies()
+                        .FirstOrDefault(x => x.GetName().Name == "ZXing.Net.Mobile.Android.Vision");
+                if (targetAsm != null)
+                {
+                    var type = targetAsm.GetType("ZXing.Net.Mobile.Android.Vision.GoogleVisionDetector");
+                    if (type != null)
+                    {
+                        return Activator.CreateInstance(type, _context) as IDetector;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Android.Util.Log.Error(MobileBarcodeScanner.TAG, ex.ToString());
+            }
+
+            return null;
         }
     }
 }
