@@ -318,7 +318,7 @@ namespace ZXing.Mobile.CameraAccess
                 parameters.SetPreviewFpsRange(selectedFps[0], selectedFps[1]);
             }
 
-            if (_scannerHost.ScanningOptions.LowLightMode == true)
+            //if (_scannerHost.ScanningOptions.LowLightMode == true)
                 SetBestExposure(parameters, parameters.FlashMode != Camera.Parameters.FlashModeOn);
 
             /*
