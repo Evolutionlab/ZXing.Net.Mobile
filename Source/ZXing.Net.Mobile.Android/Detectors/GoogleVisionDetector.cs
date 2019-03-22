@@ -19,14 +19,7 @@ namespace ZXing.Net.Mobile.Android.Vision
             _context = context;
         }
 
-        /// <summary>
-        /// Use this method to ensure that lib is included by linker (usually in LinkerPleaseInclude.cs)
-        /// </summary>
-        public static void Init()
-        {
-        }
-
-        public bool Init(MobileBarcodeScanningOptions scanningOptions)
+        public bool Init()
         {
             // todo: associate ZXing formats with Vision to use .SetBarcodeFormats(..)
             _detector = new BarcodeDetector.Builder(_context).Build();

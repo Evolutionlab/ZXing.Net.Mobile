@@ -28,6 +28,7 @@ using Android.Graphics;
 using Android.Content;
 using Android.Util;
 using ZXing.Mobile.Detectors;
+using ZXing.Net.Mobile.Android.Vision;
 
 namespace ZXing.Mobile.CameraAccess
 {
@@ -37,21 +38,24 @@ namespace ZXing.Mobile.CameraAccess
         ///START - Scanning Improvement, VK 11/14/2018
         /// </summary>
         private const int MIN_FRAME_WIDTH = 240;
+
         private const int MIN_FRAME_HEIGHT = 240;
-        private const int MAX_FRAME_WIDTH = 640; // = 5/8 * 1920
+        private const int MAX_FRAME_WIDTH = 640;  // = 5/8 * 1920
         private const int MAX_FRAME_HEIGHT = 480; // = 5/8 * 1080
+
         /// <summary>
         /// END - Scanning Improvement, VK 11/14/2018
         /// </summary>
         /// 
 
         private readonly CameraController _cameraController;
+
+        private readonly Context _context;
         private readonly MobileBarcodeScanningOptions _scanningOptions;
         private readonly CameraEventsListener _cameraEventListener;
         private int _screenHeight = -1;
         private int _screenWidth = -1;
         private Task _processingTask;
-        private IDetector _barcodeDetector;
         private DateTime _lastPreviewAnalysis = DateTime.UtcNow;
         private bool _wasScanned;
         IScannerSessionHost _scannerHost;
@@ -63,13 +67,14 @@ namespace ZXing.Mobile.CameraAccess
 
         public CameraAnalyzer(SurfaceView surfaceView, IScannerSessionHost scannerHost)
         {
-            _scannerHost = scannerHost;
+            _context             = surfaceView.Context;
+            _scannerHost         = scannerHost;
             _cameraEventListener = new CameraEventsListener();
-            _cameraController = new CameraController(surfaceView, _cameraEventListener, scannerHost);
-            Torch = new Torch(_cameraController, surfaceView.Context);
+            _cameraController    = new CameraController(surfaceView, _cameraEventListener, scannerHost);
+            Torch                = new Torch(_cameraController, _context);
             try
             {
-                manager = (surfaceView.Context as ZxingActivity)?.WindowManager;
+                manager = (_context as ZxingActivity)?.WindowManager;
             }
             catch (Exception ex)
             {
@@ -97,7 +102,7 @@ namespace ZXing.Mobile.CameraAccess
         {
             if (_cameraSetup)
             {
-                IsAnalyzing = false;
+                IsAnalyzing                              =  false;
                 _cameraEventListener.OnPreviewFrameReady -= HandleOnPreviewFrameReady;
                 _cameraController.ShutdownCamera();
                 _cameraSetup = false;
@@ -142,10 +147,7 @@ namespace ZXing.Mobile.CameraAccess
 
         private bool Valid_ScreenResolution
         {
-            get
-            {
-                return _screenHeight > 0 && _screenWidth > 0;
-            }
+            get { return _screenHeight > 0 && _screenWidth > 0; }
         }
 
         private bool CanAnalyzeFrame
@@ -177,7 +179,7 @@ namespace ZXing.Mobile.CameraAccess
             if (!CanAnalyzeFrame)
                 return;
 
-            _wasScanned = false;
+            _wasScanned          = false;
             _lastPreviewAnalysis = DateTime.UtcNow;
 
             _processingTask = Task.Run(() =>
@@ -201,15 +203,11 @@ namespace ZXing.Mobile.CameraAccess
         private void DecodeFrame(FastJavaByteArray fastArray)
         {
             var cameraParameters = _cameraController.Camera.GetParameters();
-            var width = cameraParameters.PreviewSize.Width;
-            var height = cameraParameters.PreviewSize.Height;
+            var width            = cameraParameters.PreviewSize.Width;
+            var height           = cameraParameters.PreviewSize.Height;
 
-            var barcodeReader = _scannerHost.ScanningOptions.BuildBarcodeReader();
-
-            //InitBarcodeReaderIfNeeded();
-
-            var rotate = false;
-            var newWidth = width;
+            var rotate    = false;
+            var newWidth  = width;
             var newHeight = height;
 
             // use last value for performance gain
@@ -217,13 +215,13 @@ namespace ZXing.Mobile.CameraAccess
 
             if (cDegrees == 90 || cDegrees == 270)
             {
-                rotate = true;
-                newWidth = height;
+                rotate    = true;
+                newWidth  = height;
                 newHeight = width;
             }
 
             ZXing.Result result = null;
-            var start = PerformanceCounter.Start();
+            var          start  = PerformanceCounter.Start();
 
             /// <summary>
             ///START - Scanning Improvement, VK Apacheta Corp 11/14/2018
@@ -231,18 +229,18 @@ namespace ZXing.Mobile.CameraAccess
             ///To create a FastJavaByteArray from the cropped captured frame and use it to decode the barcode.
             ///To decrease the processing time drastically for higher resolution cameras.
             /// </summary>
-            var frame_width = width * 3 / 5;
+            var frame_width  = width * 3 / 5;
             var frame_height = height * 3 / 5;
-            var frame_left = width * 1 / 5;
-            var frame_top = height * 1 / 5;
+            var frame_left   = width * 1 / 5;
+            var frame_top    = height * 1 / 5;
 
             LuminanceSource fast = new FastJavaByteArrayYUVLuminanceSource(fastArray, width, height,
-                                                                            //framingRectPreview?.Width() ?? width,
-                                                                            // framingRectPreview?.Height() ?? height,
-                                                                            frame_left,
-                                                                            frame_top,
-                                                                            frame_width,
-                                                                            frame_height); // _area.Left, _area.Top, _area.Width, _area.Height);
+                //framingRectPreview?.Width() ?? width,
+                // framingRectPreview?.Height() ?? height,
+                frame_left,
+                frame_top,
+                frame_width,
+                frame_height); // _area.Left, _area.Top, _area.Width, _area.Height);
 
             /// <summary>
             ///END - Scanning Improvement, VK Apacheta Corp 11/14/2018
@@ -250,13 +248,32 @@ namespace ZXing.Mobile.CameraAccess
             if (rotate)
                 fast = fast.rotateCounterClockwise();
 
-            result = barcodeReader.Decode(fast);
+
+            GoogleVisionDetector _barcodeDetector = null;
+            if (_scanningOptions.UseNativeScanning)
+            {
+                _barcodeDetector = new GoogleVisionDetector(_context);
+
+                var isDetectorAvailable = _barcodeDetector.Init();
+                if (isDetectorAvailable)
+                {
+                    Log.Debug(MobileBarcodeScanner.TAG, "Reading barcode with Visio");
+                    result = _barcodeDetector.Decode(fast.Matrix,fast.Width,fast.Height);
+                }
+                else
+                {
+                    Log.Debug(MobileBarcodeScanner.TAG, "Reading barcode with Zxing");
+                    var barcodeReader = _scannerHost.ScanningOptions.BuildBarcodeReader();
+                    result = barcodeReader.Decode(fast);
+                }
+            }
 
             fastArray.Dispose();
             fastArray = null;
 
             PerformanceCounter.Stop(start,
-                $"width: {width}, height: {height}, frame_top :{frame_top}, frame_left: {frame_left}, frame_width: {frame_width}, frame_height: {frame_height}, degrees: {cDegrees}, rotate: {rotate}; " + "Decode Time: {0} ms");
+                $"width: {width}, height: {height}, frame_top :{frame_top}, frame_left: {frame_left}, frame_width: {frame_width}, frame_height: {frame_height}, degrees: {cDegrees}, rotate: {rotate}; " +
+                "Decode Time: {0} ms");
 
             if (result != null)
             {
@@ -279,9 +296,9 @@ namespace ZXing.Mobile.CameraAccess
                 //if (!Valid_ScreenResolution)
                 //    GetScreenResolution();
                 var cameraParameters = _cameraController?.Camera?.GetParameters();
-                var width = cameraParameters.PreviewSize.Width;
-                var height = cameraParameters.PreviewSize.Height;
-                if (cameraParameters == null)//|| !Valid_ScreenResolution)
+                var width            = cameraParameters.PreviewSize.Width;
+                var height           = cameraParameters.PreviewSize.Height;
+                if (cameraParameters == null) //|| !Valid_ScreenResolution)
                 {
                     // Called early, before init even finished
                     return null;
@@ -304,10 +321,12 @@ namespace ZXing.Mobile.CameraAccess
                 //rect.Top = rect.Top * height / _screenWidth;
                 //rect.Bottom = rect.Bottom * height / _screenHeight;
                 framingRectInPreview = rect;
-                Log.Debug(MobileBarcodeScanner.TAG, $"preview resolution: w={width}; h={height}; _screenWidth ={_screenWidth}; _screenHeight={_screenHeight}; framingRect={framingRect?.ToString()}");
+                Log.Debug(MobileBarcodeScanner.TAG,
+                    $"preview resolution: w={width}; h={height}; _screenWidth ={_screenWidth}; _screenHeight={_screenHeight}; framingRect={framingRect?.ToString()}");
             }
 
-            Log.Debug(MobileBarcodeScanner.TAG, $"Calculated preview framing rect: {framingRectInPreview?.FlattenToString()}");
+            Log.Debug(MobileBarcodeScanner.TAG,
+                $"Calculated preview framing rect: {framingRectInPreview?.FlattenToString()}");
             return framingRectInPreview;
         }
 
@@ -323,23 +342,25 @@ namespace ZXing.Mobile.CameraAccess
                     return null;
                 }
 
-                if (!(_width > 0 && _height > 0))//Valid_ScreenResolution)
+                if (!(_width > 0 && _height > 0)) //Valid_ScreenResolution)
                 {
                     // Called early, before init even finished
                     return null;
                 }
 
-                int width = findDesiredDimensionInRange(_width, MIN_FRAME_WIDTH, MAX_FRAME_WIDTH);
+                int width  = findDesiredDimensionInRange(_width, MIN_FRAME_WIDTH, MAX_FRAME_WIDTH);
                 int height = findDesiredDimensionInRange(_height, MIN_FRAME_HEIGHT, MAX_FRAME_HEIGHT);
 
                 int leftOffset = (_width - width) / 2;
-                int topOffset = (_height - height) / 2;
+                int topOffset  = (_height - height) / 2;
                 framingRect = new Rect(leftOffset, topOffset, width, height);
-                Log.Debug(MobileBarcodeScanner.TAG, $"Calculated framing rect: {framingRect?.FlattenToString()}; screenWidth: {_screenWidth}; screenHeight: {_screenHeight}");
+                Log.Debug(MobileBarcodeScanner.TAG,
+                    $"Calculated framing rect: {framingRect?.FlattenToString()}; screenWidth: {_screenWidth}; screenHeight: {_screenHeight}");
             }
 
             return framingRect;
         }
+
         /// <summary>
         ///Scanning Improvement, VK 10/2018
         /// </summary>
@@ -362,10 +383,12 @@ namespace ZXing.Mobile.CameraAccess
                 {
 
                     display?.GetMetrics(screenResolution);
-                    _screenWidth = screenResolution.WidthPixels;
+                    _screenWidth  = screenResolution.WidthPixels;
                     _screenHeight = screenResolution.HeightPixels;
                 }
-                Log.Debug(MobileBarcodeScanner.TAG, $"Screen Display Rect-  Width = {_screenWidth}; Height = {_screenHeight} ");
+
+                Log.Debug(MobileBarcodeScanner.TAG,
+                    $"Screen Display Rect-  Width = {_screenWidth}; Height = {_screenHeight} ");
             }
             catch (Exception ex)
             {
@@ -383,61 +406,13 @@ namespace ZXing.Mobile.CameraAccess
             {
                 return hardMin;
             }
+
             if (dim > hardMax)
             {
                 return hardMax;
             }
+
             return dim;
-        }
-
-        private void InitBarcodeReaderIfNeeded()
-        {
-            if (_barcodeDetector != null)
-                return;
-
-            var isNativeUsed = false;
-            if (_scanningOptions.UseNativeScanning)
-            {
-                _barcodeDetector = CreateGoogleVisionDetector();
-                isNativeUsed = true;
-            }
-
-            if (_barcodeDetector == null)
-            {
-                _barcodeDetector = new ZXingDetector();
-                isNativeUsed = false;
-            }
-
-            var isDetectorAvailable = _barcodeDetector.Init(_scanningOptions);
-            if (!isDetectorAvailable && isNativeUsed)
-            {
-                _barcodeDetector = new ZXingDetector();
-                _barcodeDetector.Init(_scanningOptions);
-            }
-        }
-
-        private IDetector CreateGoogleVisionDetector()
-        {
-            try
-            {
-                var targetAsm =
-                    AppDomain.CurrentDomain.GetAssemblies()
-                        .FirstOrDefault(x => x.GetName().Name == "ZXing.Net.Mobile.Android.Vision");
-                if (targetAsm != null)
-                {
-                    var type = targetAsm.GetType("ZXing.Net.Mobile.Android.Vision.GoogleVisionDetector");
-                    if (type != null)
-                    {
-                        return Activator.CreateInstance(type, _context) as IDetector;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Android.Util.Log.Error(MobileBarcodeScanner.TAG, ex.ToString());
-            }
-
-            return null;
         }
     }
 }

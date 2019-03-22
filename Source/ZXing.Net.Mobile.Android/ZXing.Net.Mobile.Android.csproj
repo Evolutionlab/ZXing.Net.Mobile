@@ -13,10 +13,6 @@
     <RootNamespace>ZXing.Mobile</RootNamespace>
     <AssemblyName>ZXingNetMobile</AssemblyName>
     <TargetFrameworkVersion>v9.0</TargetFrameworkVersion>
-    <TargetFrameworkVersion>v4.0.3</TargetFrameworkVersion>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
-    <AndroidUseLatestPlatformSdk>False</AndroidUseLatestPlatformSdk>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <Optimize>False</Optimize>
@@ -41,22 +37,19 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="Mono.Android" />
-    <Reference Include="Xamarin.Android.Support.v4, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\..\packages\Xamarin.Android.Support.v4.23.4.0.1\lib\MonoAndroid403\Xamarin.Android.Support.v4.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ActivityLifecycleContextListener.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="BitmapRenderer.cs" />
     <Compile Include="BitmapWriter.cs" />
-    <Compile Include="Detectors\IDetector.cs" />
-    <Compile Include="Detectors\ZXingDetector.cs" />
     <Compile Include="CameraAccess\CameraAnalyzer.cs" />
     <Compile Include="CameraAccess\CameraController.cs" />
     <Compile Include="CameraAccess\CameraEventsListener.cs" />
     <Compile Include="CameraAccess\Torch.cs" />
+    <Compile Include="Detectors\GoogleVisionDetector.cs" />
+    <Compile Include="Detectors\IDetector.cs" />
+    <Compile Include="Detectors\ZXingDetector.cs" />
     <Compile Include="MobileBarcodeScanner.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
     <Compile Include="ZxingActivity.cs" />
