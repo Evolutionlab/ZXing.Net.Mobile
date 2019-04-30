@@ -20,4 +20,3 @@ namespace ZXing.Mobile
         bool HasTorch { get; }
     }
 }
-

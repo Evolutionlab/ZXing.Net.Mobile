@@ -7,34 +7,34 @@ using Android.Support.V4.App;
 namespace ZXing.Mobile
 {
     public class ZXingScannerFragment : Fragment, IZXingScanner<View>, IScannerView
-	{
-	    public ZXingScannerFragment() 
+    {
+        public ZXingScannerFragment()
         {
             UseCustomOverlayView = false;
-	    }
-            
-		FrameLayout frame;
+        }
 
-	    public override View OnCreateView (LayoutInflater layoutInflater, ViewGroup viewGroup, Bundle bundle)
-		{
-			frame = (FrameLayout)layoutInflater.Inflate(Resource.Layout.zxingscannerfragmentlayout, viewGroup, false);
+        FrameLayout frame;
+
+        public override View OnCreateView(LayoutInflater layoutInflater, ViewGroup viewGroup, Bundle bundle)
+        {
+            frame = (FrameLayout)layoutInflater.Inflate(Resource.Layout.zxingscannerfragmentlayout, viewGroup, false);
 
             var layoutParams = getChildLayoutParams();
 
             try
             {
-                scanner = new ZXingSurfaceView (this.Activity);
+                scanner = new ZXingSurfaceView(this.Activity, ScanningOptions);
 
                 frame.AddView(scanner, layoutParams);
 
 
                 if (!UseCustomOverlayView)
                 {
-                    zxingOverlay = new ZxingOverlayView (this.Activity);
+                    zxingOverlay = new ZxingOverlayView(this.Activity);
                     zxingOverlay.TopText = TopText ?? "";
                     zxingOverlay.BottomText = BottomText ?? "";
 
-                    frame.AddView (zxingOverlay, layoutParams);
+                    frame.AddView(zxingOverlay, layoutParams);
                 }
                 else if (CustomOverlayView != null)
                 {
@@ -43,12 +43,12 @@ namespace ZXing.Mobile
             }
             catch (Exception ex)
             {
-                Console.WriteLine ("Create Surface View Failed: " + ex);
+                Console.WriteLine("Create Surface View Failed: " + ex);
             }
 
-            Android.Util.Log.Debug (MobileBarcodeScanner.TAG, "ZXingScannerFragment->OnResume exit");
+            Android.Util.Log.Debug(MobileBarcodeScanner.TAG, "ZXingScannerFragment->OnResume exit");
 
-			return frame;
+            return frame;
         }
 
         public override void OnStart()
@@ -62,9 +62,9 @@ namespace ZXing.Mobile
                 frame.AddView(scanner, layoutParams);
 
                 if (!UseCustomOverlayView)
-                    frame.AddView (zxingOverlay, layoutParams);
+                    frame.AddView(zxingOverlay, layoutParams);
                 else if (CustomOverlayView != null)
-                    frame.AddView (CustomOverlayView, layoutParams);
+                    frame.AddView(CustomOverlayView, layoutParams);
             }
         }
 
@@ -92,88 +92,94 @@ namespace ZXing.Mobile
             return layoutParams;
         }
 
-        public View CustomOverlayView { get;set; }
-        public bool UseCustomOverlayView { get; set ; }
-		public MobileBarcodeScanningOptions ScanningOptions { get;set; }
-		public string TopText { get;set; }
-		public string BottomText { get;set; }
-		
-		ZXingSurfaceView scanner;
-		ZxingOverlayView zxingOverlay;
+        public View CustomOverlayView { get; set; }
+        public bool UseCustomOverlayView { get; set; }
+        public MobileBarcodeScanningOptions ScanningOptions { get; set; }
+        public string TopText { get; set; }
+        public string BottomText { get; set; }
 
-		public void Torch(bool on)
-		{
-			scanner?.Torch(on);
-		}
-		
+        ZXingSurfaceView scanner;
+        ZxingOverlayView zxingOverlay;
+
+        public void Torch(bool on)
+        {
+            scanner?.Torch(on);
+        }
+
         public void AutoFocus()
         {
             scanner?.AutoFocus();
         }
 
         public void AutoFocus(int x, int y)
-		{
-			scanner?.AutoFocus(x, y);
-		}
+        {
+            scanner?.AutoFocus(x, y);
+        }
 
         Action<Result> scanCallback;
         //bool scanImmediately = false;
 
-        public void StartScanning (Action<Result> scanResultHandler, MobileBarcodeScanningOptions options = null)
-        {            
+        public void StartScanning(Action<Result> scanResultHandler, MobileBarcodeScanningOptions options = null)
+        {
             ScanningOptions = options;
             scanCallback = scanResultHandler;
 
-            if (scanner == null) {
+            if (scanner == null)
+            {
                 //scanImmediately = true;
                 return;
             }
 
-            scan ();
+            scan();
         }
 
-        void scan ()
+        void scan()
         {
-            scanner?.StartScanning (scanCallback, ScanningOptions);
+            scanner?.StartScanning(scanCallback, ScanningOptions);
         }
 
-        public void StopScanning ()
+        public void StopScanning()
         {
-            scanner?.StopScanning ();
+            scanner?.StopScanning();
         }
 
-        public void PauseAnalysis ()
+        public void PauseAnalysis()
         {
-            scanner?.PauseAnalysis ();
+            scanner?.PauseAnalysis();
         }
 
-        public void ResumeAnalysis ()
+        public void ResumeAnalysis()
         {
-            scanner?.ResumeAnalysis ();
+            scanner?.ResumeAnalysis();
         }
 
-        public void ToggleTorch ()
+        public void ToggleTorch()
         {
-            scanner?.ToggleTorch ();
+            scanner?.ToggleTorch();
         }
 
-        public bool IsTorchOn {
-            get {
+        public bool IsTorchOn
+        {
+            get
+            {
                 return scanner?.IsTorchOn ?? false;
             }
         }
 
-        public bool IsAnalyzing {
-            get {
+        public bool IsAnalyzing
+        {
+            get
+            {
                 return scanner?.IsAnalyzing ?? false;
             }
         }
 
-        public bool HasTorch {
-            get {
+        public bool HasTorch
+        {
+            get
+            {
                 return scanner?.HasTorch ?? false;
             }
         }
-	}
+    }
 }
-

@@ -9,9 +9,7 @@ namespace ZXing.Mobile
 {
     public class ZXingSurfaceView : SurfaceView, ISurfaceHolderCallback, IScannerView, IScannerSessionHost
     {
-        private CameraAnalyzer _cameraAnalyzer;
-
-        public ZXingSurfaceView(Context context)
+        public ZXingSurfaceView(Context context, MobileBarcodeScanningOptions options)
             : base(context)
         {
             ScanningOptions = options ?? new MobileBarcodeScanningOptions();
@@ -24,20 +22,21 @@ namespace ZXing.Mobile
             Init();
         }
 
-		bool addedHolderCallback = false;
+        bool addedHolderCallback = false;
 
         private void Init()
         {
-			if (_cameraAnalyzer == null)
-	            _cameraAnalyzer = new CameraAnalyzer(this, this);
+            if (_cameraAnalyzer == null)
+                _cameraAnalyzer = new CameraAnalyzer(this, this, ScanningOptions);
 
-			_cameraAnalyzer.ResumeAnalysis();
+            _cameraAnalyzer.ResumeAnalysis();
 
-			if (!addedHolderCallback) {
-				Holder.AddCallback(this);
-				Holder.SetType(SurfaceType.PushBuffers);
-				addedHolderCallback = true;
-			}
+            if (!addedHolderCallback)
+            {
+                Holder.AddCallback(this);
+                Holder.SetType(SurfaceType.PushBuffers);
+                addedHolderCallback = true;
+            }
         }
 
         public async void SurfaceCreated(ISurfaceHolder holder)
@@ -62,12 +61,15 @@ namespace ZXing.Mobile
         {
             await ZXing.Net.Mobile.Android.PermissionsHandler.PermissionRequestTask;
 
-            try {
-				if (addedHolderCallback) {
-					Holder.RemoveCallback(this);
-					addedHolderCallback = false;
-				}
-            } catch { }
+            try
+            {
+                if (addedHolderCallback)
+                {
+                    Holder.RemoveCallback(this);
+                    addedHolderCallback = false;
+                }
+            }
+            catch { }
 
             _cameraAnalyzer.ShutdownCamera();
         }
@@ -109,7 +111,6 @@ namespace ZXing.Mobile
             _cameraAnalyzer.SetupCamera();
 
             ScanningOptions = options ?? MobileBarcodeScanningOptions.Default;
-            _cameraAnalyzer = new CameraAnalyzer(this, ScanningOptions);
 
             _cameraAnalyzer.BarcodeFound += (sender, result) =>
             {
@@ -141,11 +142,14 @@ namespace ZXing.Mobile
                 _cameraAnalyzer.Torch.TurnOn();
             else
                 _cameraAnalyzer.Torch.TurnOff();
+
+            _cameraAnalyzer.SetBestExposure(on);
         }
 
         public void ToggleTorch()
         {
             _cameraAnalyzer.Torch.Toggle();
+            _cameraAnalyzer.SetBestExposure(IsTorchOn);
         }
 
         public MobileBarcodeScanningOptions ScanningOptions { get; set; }
@@ -153,6 +157,9 @@ namespace ZXing.Mobile
         public bool IsTorchOn => _cameraAnalyzer.Torch.IsEnabled;
 
         public bool IsAnalyzing => _cameraAnalyzer.IsAnalyzing;
+
+        public CameraAnalyzer _cameraAnalyzer;
+        private bool _surfaceCreated;
 
         public bool HasTorch => _cameraAnalyzer.Torch.IsSupported;
 
@@ -200,25 +207,39 @@ namespace ZXing.Mobile
 
         #endregion
 
-		protected override void OnAttachedToWindow()
-		{
-			base.OnAttachedToWindow();
+        public override void Draw(Canvas canvas)
+        {
+            base.Draw(canvas);
 
-			// Reinit things
-			Init();
-		}
+            Paint paint = new Paint();
+            paint.Color = Android.Graphics.Color.White;
+            paint.StrokeWidth = 3.0f;
+            paint.SetStyle(Paint.Style.Stroke);
 
-		protected override void OnWindowVisibilityChanged(ViewStates visibility)
-		{
-			base.OnWindowVisibilityChanged(visibility);
-			if (visibility == ViewStates.Visible)
-				Init();
-		}
+            var border = new RectF(-400, -400, 400, 400);
+            canvas.DrawRect(border, paint);
+
+        }
+
+        protected override void OnAttachedToWindow()
+        {
+            base.OnAttachedToWindow();
+
+            // Reinit things
+            Init();
+        }
+
+        protected override void OnWindowVisibilityChanged(ViewStates visibility)
+        {
+            base.OnWindowVisibilityChanged(visibility);
+            if (visibility == ViewStates.Visible)
+                Init();
+        }
 
         public override async void OnWindowFocusChanged(bool hasWindowFocus)
         {
             base.OnWindowFocusChanged(hasWindowFocus);
-            
+
             if (!hasWindowFocus) return;
             // SurfaceCreated/SurfaceChanged are not called on a resume
             await ZXing.Net.Mobile.Android.PermissionsHandler.PermissionRequestTask;

@@ -32,9 +32,10 @@ namespace ZXing.Mobile
 		public bool? TryInverted { get;set; }
 		public bool? UseFrontCameraIfAvailable { get; set; }
         public bool? AssumeGS1 { get; set; }
+        public bool? LowLightMode { get; set; }
 
 
-		public bool DisableAutofocus { get; set; }
+        public bool DisableAutofocus { get; set; }
 
         public bool UseNativeScanning { get; set; }
 

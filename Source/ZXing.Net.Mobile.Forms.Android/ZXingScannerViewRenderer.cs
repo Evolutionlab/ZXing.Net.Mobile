@@ -70,11 +70,11 @@ namespace ZXing.Net.Mobile.Forms.Android
 
                 base.SetNativeControl (zxingSurface);
 
-                if (formsView.IsScanning)
+                //if (formsView.IsScanning)
                     zxingSurface.StartScanning(formsView.RaiseScanResult, formsView.Options);
 
-                if (!formsView.IsAnalyzing)
-                    zxingSurface.PauseAnalysis ();
+                //if (!formsView.IsAnalyzing)
+                //    zxingSurface.PauseAnalysis ();
 
                 if (formsView.IsTorchOn)
                     zxingSurface.Torch (true);

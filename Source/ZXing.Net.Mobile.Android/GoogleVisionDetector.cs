@@ -1,13 +1,11 @@
 ﻿using System;
 using Android.Content;
-using ZXing.Mobile.Detectors;
 using Android.Gms.Vision;
 using Android.Gms.Vision.Barcodes;
 using Android.Graphics;
 using Java.Nio;
-using ZXing.Mobile;
 
-namespace ZXing.Net.Mobile.Android.Vision
+namespace ZXing.Mobile
 {
     public class GoogleVisionDetector
     {
@@ -22,7 +20,8 @@ namespace ZXing.Net.Mobile.Android.Vision
         public bool Init()
         {
             // todo: associate ZXing formats with Vision to use .SetBarcodeFormats(..)
-            _detector = new BarcodeDetector.Builder(_context).Build();
+            _detector = new BarcodeDetector.Builder(_context).SetBarcodeFormats(Android.Gms.Vision.Barcodes.BarcodeFormat.Ean13 | Android.Gms.Vision.Barcodes.BarcodeFormat.Code39).Build();
+
 
             if (!_detector.IsOperational)
             {
