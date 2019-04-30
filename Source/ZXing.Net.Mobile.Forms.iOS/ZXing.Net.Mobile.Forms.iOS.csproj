@@ -58,6 +58,8 @@
     <ProjectReference Include="..\ZXing.Net.Mobile.iOS\ZXing.Net.Mobile.iOS.csproj">
       <Project>{6CBD1DF3-1FD3-4F20-80A2-A0C7414C411A}</Project>
       <Name>ZXing.Net.Mobile.iOS</Name>
+      <IsAppExtension>false</IsAppExtension>
+      <IsWatchApp>false</IsWatchApp>
     </ProjectReference>
     <ProjectReference Include="..\ZXing.Net\Source\lib\zxing.portable.csproj">
       <Project>{24b441f2-cbe9-4405-9fd0-72ebcbea0ec3}</Project>
