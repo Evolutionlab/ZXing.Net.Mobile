@@ -12,14 +12,18 @@ namespace ZXing.Mobile
 
         readonly WeakReference<UIViewController> weakAppController;
         readonly ManualResetEvent scanResultResetEvent = new ManualResetEvent(false);
+        readonly Version version;
 
 		public MobileBarcodeScanner (UIViewController delegateController)
 		{
-			weakAppController = new WeakReference<UIViewController>(delegateController);
-		}
+            Version.TryParse(UIDevice.CurrentDevice.SystemVersion, out version);
+            weakAppController = new WeakReference<UIViewController>(delegateController);
+        }
 
 		public MobileBarcodeScanner ()
 		{
+            Version.TryParse(UIDevice.CurrentDevice.SystemVersion, out version);
+
 			foreach (var window in UIApplication.SharedApplication.Windows)
 			{
 				if (window.RootViewController != null)
@@ -51,9 +55,7 @@ namespace ZXing.Mobile
         {
             try
             {
-                Version.TryParse (UIDevice.CurrentDevice.SystemVersion, out var sv);
-
-                var is7OrGreater = sv.Major >= 7;
+                var is7OrGreater = version.Major >= 7;
                 var allRequestedFormatsSupported = true;
 
                 if (useAVCaptureEngine)
@@ -114,9 +116,7 @@ namespace ZXing.Mobile
 
 					Result result = null;
 
-                    Version.TryParse (UIDevice.CurrentDevice.SystemVersion, out var sv);
-
-					var is7OrGreater = sv.Major >= 7;
+					var is7OrGreater = version.Major >= 7;
 					var allRequestedFormatsSupported = true;
 
 					if (useAVCaptureEngine)
