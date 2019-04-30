@@ -7,20 +7,19 @@ namespace ZXing.Mobile
 {
     public class MobileBarcodeScanner : MobileBarcodeScannerBase
 	{
-		//ZxingCameraViewController viewController;
 		IScannerViewController viewController;
 
         readonly WeakReference<UIViewController> weakAppController;
         readonly ManualResetEvent scanResultResetEvent = new ManualResetEvent(false);
         readonly Version version;
 
-		public MobileBarcodeScanner (UIViewController delegateController)
+		public MobileBarcodeScanner(UIViewController delegateController)
 		{
             Version.TryParse(UIDevice.CurrentDevice.SystemVersion, out version);
             weakAppController = new WeakReference<UIViewController>(delegateController);
         }
 
-		public MobileBarcodeScanner ()
+		public MobileBarcodeScanner()
 		{
             Version.TryParse(UIDevice.CurrentDevice.SystemVersion, out version);
 
@@ -34,24 +33,24 @@ namespace ZXing.Mobile
 			}
 		}
 
-		public Task<Result> Scan (bool useAVCaptureEngine)
+		public Task<Result> Scan(bool useAVCaptureEngine)
 		{
 			return Scan (new MobileBarcodeScanningOptions (), useAVCaptureEngine);
 		}
 
 
-		public override Task<Result> Scan (MobileBarcodeScanningOptions options)
+		public override Task<Result> Scan(MobileBarcodeScanningOptions options)
 		{
 			return Scan (options, false);
 		}
 
 
-        public override void ScanContinuously (MobileBarcodeScanningOptions options, Action<Result> scanHandler)
+        public override void ScanContinuously(MobileBarcodeScanningOptions options, Action<Result> scanHandler)
         {
             ScanContinuously (options, false, scanHandler);
         }
 
-        public void ScanContinuously (MobileBarcodeScanningOptions options, bool useAVCaptureEngine, Action<Result> scanHandler)
+        public void ScanContinuously(MobileBarcodeScanningOptions options, bool useAVCaptureEngine, Action<Result> scanHandler)
         {
             try
             {
@@ -67,8 +66,10 @@ namespace ZXing.Mobile
 
                         if (useAVCaptureEngine && is7OrGreater && allRequestedFormatsSupported)
                         {
-                            viewController = new AVCaptureScannerViewController(options, this);
-                            viewController.ContinuousScanning = true;
+                            viewController = new AVCaptureScannerViewController(options, this)
+                            {
+                                ContinuousScanning = true
+                            };
                         }
                         else
                         {
@@ -106,7 +107,7 @@ namespace ZXing.Mobile
             }
         }
 
-		public Task<Result> Scan (MobileBarcodeScanningOptions options, bool useAVCaptureEngine)
+		public Task<Result> Scan(MobileBarcodeScanningOptions options, bool useAVCaptureEngine)
 		{
 			return Task.Factory.StartNew(() => {
 
@@ -188,7 +189,7 @@ namespace ZXing.Mobile
 
 		}
 
-		public override void Cancel ()
+		public override void Cancel()
 		{
             ((UIViewController) viewController)?.InvokeOnMainThread(() => {
                 viewController.Cancel();
@@ -200,29 +201,29 @@ namespace ZXing.Mobile
             scanResultResetEvent.Set();
 		}
 
-		public override void Torch (bool on)
+		public override void Torch(bool on)
         {
-            viewController?.Torch (@on);
+            viewController?.Torch(on);
         }
 
-		public override void ToggleTorch ()
+		public override void ToggleTorch()
 		{
 			viewController.ToggleTorch();
 		}
 
-		public override void AutoFocus ()
+		public override void AutoFocus()
 		{
 			//Does nothing on iOS
 		}
 
-        public override void PauseAnalysis ()
+        public override void PauseAnalysis()
         {
-            viewController.PauseAnalysis ();
+            viewController.PauseAnalysis();
         }
 
-        public override void ResumeAnalysis ()
+        public override void ResumeAnalysis()
         {
-            viewController.ResumeAnalysis ();
+            viewController.ResumeAnalysis();
         }
 
 		public override bool IsTorchOn => viewController.IsTorchOn;
